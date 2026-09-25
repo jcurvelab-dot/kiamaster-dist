@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko"><head>
-  <meta name="kiamaster-version" content="1.2.139">
+  <meta name="kiamaster-version" content="1.2.140">
   <meta name="kiamaster-channel" content="share">
 <script>
 (function(){
-  var v="1.2.139";
+  var v="1.2.140";
   function paint(){
     var el=document.getElementById("verBadge");
     if(el) el.innerHTML="KiaMaster <em>v"+v+"</em>";
@@ -15,7 +15,7 @@
 })();
 </script>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>KiaMaster v1.2.139 · 기아 통합관리</title>
+<title>KiaMaster v1.2.140 · 기아 통합관리</title>
 <meta name="application-name" content="KiaMaster_v1.2.61">
 <style>
 :root{
@@ -1139,7 +1139,7 @@ button.hist-item:hover,button.hist-item:focus{border-color:#2563eb;background:#e
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <h1>기아 통합관리 <span class="ver" id="verBadge">KiaMaster <em>v1.2.139</em></span></h1>
+        <h1>기아 통합관리 <span class="ver" id="verBadge">KiaMaster <em>v1.2.140</em></span></h1>
         <div class="sub" id="camasterLine">기아 카마스터 워크벤치</div>
       </div>
       <div class="sync">
@@ -1258,7 +1258,7 @@ button.hist-item:hover,button.hist-item:focus{border-color:#2563eb;background:#e
 /* ===== parser.js ===== */
 /* KiaMaster v1.2.97 — 텍스트/견적/계약/정책재고 인식 */
 (function (w) {
-  const APP_VER = "1.2.139";
+  const APP_VER = "1.2.140";
 
   const PHONE_RE = /01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}/;
   const CODE_RE = /\b([A-Z]{2,5}\d[A-Z0-9]{4,8})\b/g;
@@ -2715,7 +2715,7 @@ function parseCustomerText(text, hint) {
 /* ===== match.js ===== */
 /* KiaMaster v1.2.8 — 차종/옵션/색상 정밀 매칭 */
 (function (w) {
-  const APP_VER = "1.2.139";
+  const APP_VER = "1.2.140";
 
   function nfk(s) {
     let t = String(s || "");
@@ -3228,7 +3228,7 @@ function parseCustomerText(text, hint) {
 /* ===== store.js ===== */
 /* KiaMaster v1.2.8 — 로컬 자동저장 + 구글시트 동기화 */
 (function (w) {
-  const APP_VER = "1.2.139";
+  const APP_VER = "1.2.140";
   const KEY_BASE = "KiaMaster.data.all";
   const KEY = KEY_BASE;
   let activeKey = KEY_BASE;
@@ -4789,10 +4789,10 @@ function parseCustomerText(text, hint) {
 /* ===== app.js ===== */
 /* KiaMaster v1.1.0 */
 (function (w) {
-  const APP_VER = "1.2.139";
+  const APP_VER = "1.2.140";
   const APP_NAME = "KiaMaster";
 
-  /* ===== KiaMaster hot-update (v1.2.139) ===== */
+  /* ===== KiaMaster hot-update (v1.2.140) ===== */
   const KM_FEED = {
     versionUrl: "https://raw.githubusercontent.com/jcurvelab-dot/kiamaster-dist/main/version.json",
     channel: (function(){
@@ -6243,7 +6243,7 @@ function parseCustomerText(text, hint) {
     const M = window.KIA_MASTER || {};
     const key = String(line || "");
     M._modelCache = M._modelCache || Object.create(null);
-    const cacheKey = key + "|v1139";
+    const cacheKey = key + "|v1140";
     if (M._modelCache[cacheKey]) return M._modelCache[cacheKey];
     const rows = [];
     const models = M.models || {};
@@ -7143,14 +7143,31 @@ function parseCustomerText(text, hint) {
   }
   function openKakao(txt) {
     const body = String(txt || "");
+    // Mac: prefer KiaApp.shareKakao (no broken activeElement anchor).
+    // NSSharingServicePicker with a 1×1 / off-screen anchor often shows nothing.
+    const clipBackup = () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(body);
+      } catch (eC) {}
+    };
+    try {
+      if (window.KiaApp && typeof window.KiaApp.shareKakao === "function") {
+        window.KiaApp.shareKakao(body);
+        clipBackup();
+        return;
+      }
+    } catch (eKA) {}
     const mac = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.kiaMac;
     if (mac) {
       try {
-        const el = document.activeElement;
-        const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : {x:20,y:20,width:1,height:1};
-        mac.postMessage({op:"share",text:body,anchor:{x:r.x,y:r.y,width:r.width,height:r.height}});
+        const ax = Math.max(40, ((window.innerWidth || 800) / 2) - 80);
+        const ay = Math.max(80, (window.innerHeight || 600) / 3);
+        mac.postMessage({op:"share",text:body,anchor:{x:ax,y:ay,width:160,height:36}});
+        clipBackup();
+        toast("공유 시트 · 안 뜨면 카톡에 붙여넣기");
       } catch (e) {
-        toast("카카오톡 연결 실패: " + (e.message || e));
+        clipBackup();
+        toast("카카오톡 연결 실패: " + (e.message || e) + " · 문구 복사됨");
       }
       return;
     }
