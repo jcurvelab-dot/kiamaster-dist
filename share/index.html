@@ -7143,36 +7143,56 @@ function parseCustomerText(text, hint) {
   }
   function openKakao(txt) {
     const body = String(txt || "");
-    // Mac: prefer KiaApp.shareKakao (no broken activeElement anchor).
-    // NSSharingServicePicker with a 1×1 / off-screen anchor often shows nothing.
-    const clipBackup = () => {
+    const copyBody = () => {
       try {
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(body);
-      } catch (eC) {}
+        const ta = document.createElement("textarea");
+        ta.value = body;
+        ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;";
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) return true;
+      } catch (e1) {}
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(body);
+          return true;
+        }
+      } catch (e2) {}
+      return false;
     };
-    try {
-      if (window.KiaApp && typeof window.KiaApp.shareKakao === "function") {
-        window.KiaApp.shareKakao(body);
-        clipBackup();
-        return;
-      }
-    } catch (eKA) {}
-    const mac = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.kiaMac;
-    if (mac) {
+    const openKakaoTalkApp = () => {
       try {
-        const ax = Math.max(40, ((window.innerWidth || 800) / 2) - 80);
-        const ay = Math.max(80, (window.innerHeight || 600) / 3);
-        mac.postMessage({op:"share",text:body,anchor:{x:ax,y:ay,width:160,height:36}});
-        clipBackup();
-        toast("공유 시트 · 안 뜨면 카톡에 붙여넣기");
-      } catch (e) {
-        clipBackup();
-        toast("카카오톡 연결 실패: " + (e.message || e) + " · 문구 복사됨");
+        const a = document.createElement("a");
+        a.href = "kakaotalk://";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (eA) {
+        try { window.location.href = "kakaotalk://"; } catch (eB) {}
       }
+    };
+    // Mac WKWebView: NSSharingServicePicker is unreliable (often shows nothing).
+    // Copy text + open KakaoTalk so ⌘V works. Still fire native share as best-effort.
+    const mac = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.kiaMac;
+    if (mac || (window.KiaApp && typeof window.KiaApp.shareKakao === "function" && !/Android/i.test(navigator.userAgent || ""))) {
+      const copied = copyBody();
+      try {
+        if (window.KiaApp && typeof window.KiaApp.shareKakao === "function") window.KiaApp.shareKakao(body);
+        else if (mac) {
+          const ax = Math.max(40, ((window.innerWidth || 800) / 2) - 80);
+          const ay = Math.max(80, (window.innerHeight || 600) / 3);
+          mac.postMessage({op:"share",text:body,anchor:{x:ax,y:ay,width:160,height:36}});
+        }
+      } catch (eShare) {}
+      openKakaoTalkApp();
+      toast(copied ? "문구 복사됨 · 카톡에서 ⌘V 붙여넣기" : "카톡을 열었어요 · 문구 복사가 안 되면 다시 눌러줘");
       return;
     }
-
-    if (window.KiaApp && /Android/i.test(navigator.userAgent || "")) {
+if (window.KiaApp && /Android/i.test(navigator.userAgent || "")) {
       try {
         // The APK intercepts this prompt and synchronously opens ACTION_SEND.
         window.prompt("KIA_KAKAO", body);
