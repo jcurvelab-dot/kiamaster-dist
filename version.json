@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-09-25T18:14:21+09:00",
+  "updatedAt": "2026-11-02T22:01:33+09:00",
   "k": {
-    "version": "1.2.140",
+    "version": "1.2.157",
     "url": "https://raw.githubusercontent.com/jcurvelab-dot/kiamaster-dist/main/k/index.html"
   },
   "share": {
-    "version": "1.2.140",
+    "version": "1.2.157",
     "url": "https://raw.githubusercontent.com/jcurvelab-dot/kiamaster-dist/main/share/index.html"
   },
   "codebook": {
